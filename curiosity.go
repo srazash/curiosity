@@ -3,16 +3,19 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
-type Photo struct {
-	Id      float64 `json:"id"`
-	Img_src string  `json:"img_src"`
+type Images struct {
+	Photos []struct {
+		ImgSrc string `json:"img_src"`
+	} `json:"photos"`
 }
 
 var client *http.Client
@@ -23,7 +26,6 @@ func main() {
 
 	if len(os.Args) > 1 {
 		if solArgs, err := strconv.Atoi(os.Args[1]); err != nil {
-			fmt.Println("Did dumbdumb type in a string instead of a number???")
 			log.Fatal(err)
 		} else {
 			sol = solArgs
@@ -34,8 +36,50 @@ func main() {
 
 	client = &http.Client{Timeout: time.Second * 10}
 
-	getPhoto(url)
+	getPhotos(sol, url)
 
+}
+
+func getPhotos(sol int, url string) {
+	var photos Images
+	dir := fmt.Sprintf("sol %s", strconv.Itoa(sol))
+
+	if err := os.RemoveAll(dir); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := os.MkdirAll(dir, os.ModeDir); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := getJson(url, &photos); err != nil {
+		log.Fatal(err)
+	} else {
+		for i, p := range photos.Photos {
+			resp, err := http.Get(p.ImgSrc)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer resp.Body.Close()
+
+			filename := strings.Split(p.ImgSrc, "/")
+			file := fmt.Sprintf("%s/%s", dir, filename[len(filename)-1])
+			fmt.Printf("Downloading file %d of %d...\n", i+1, len(photos.Photos))
+
+			out, err := os.Create(file)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer out.Close()
+
+			_, err = io.Copy(out, resp.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+		}
+
+	}
 }
 
 func getJson(url string, target interface{}) error {
@@ -48,14 +92,4 @@ func getJson(url string, target interface{}) error {
 	json.NewDecoder(resp.Body).Decode(target)
 
 	return nil
-}
-
-func getPhoto(url string) {
-	var photo Photo
-
-	if err := getJson(url, &photo); err != nil {
-		log.Fatal(err)
-	} else {
-		fmt.Printf("%.0f: %s", photo.Id, photo.Img_src)
-	}
 }
