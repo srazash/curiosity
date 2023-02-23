@@ -36,10 +36,7 @@ func main() {
 
 	client = &http.Client{Timeout: time.Second * 10}
 
-	fmt.Println("ｃｕｒｉｏｓｉｔｙ░ｖｅｒｓ．░０．９９　（くごフ）")
-	fmt.Println("【ｓｏｆｔｗａｒｅ　ｂｙ　ｒｓｈ】")
-	fmt.Println()
-	fmt.Printf("::download of curiosity sol %d files...\n", sol)
+	fmt.Printf("ｃｕｒｉｏｓｉｔｙ░ｖｅｒｓ．░０．９９　（くごフ）\n【ｓｏｆｔｗａｒｅ　ｂｙ　ｒｓｈ】\n...starting download of ｃｕｒｉｏｓｉｔｙ 【SOL %d】 img files...\n", sol)
 
 	getPhotos(sol, url)
 
@@ -69,7 +66,10 @@ func getPhotos(sol int, url string) {
 
 			filename := strings.Split(p.ImgSrc, "/")
 			file := fmt.Sprintf("%s/%s", dir, filename[len(filename)-1])
-			fmt.Printf("::::downloading file %d of %d...\n", i+1, len(photos.Photos))
+			perca := float64(i) + 1
+			percb := float64(len(photos.Photos))
+			perc := perca / percb * 100
+			fmt.Printf("【%.2f%%】\tdownloading file %d of %d...\n", perc, i+1, len(photos.Photos))
 
 			out, err := os.Create(file)
 			if err != nil {
@@ -85,6 +85,8 @@ func getPhotos(sol int, url string) {
 		}
 
 	}
+
+	fmt.Printf("look for 【%s】 dir in the PWD...", dir)
 
 }
 
